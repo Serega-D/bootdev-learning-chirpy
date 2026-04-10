@@ -1,4 +1,6 @@
 out
 *.exe
 
+.env0ot
+bootdev-learning-chirpy
 .env
