@@ -1,0 +1,112 @@
+############################################################
+### НАСТРОЙКИ ОКРУЖЕНИЯ
+############################################################
+@baseUrl = http://localhost:8080
+# Токен будет браться автоматически из ответа логина
+@token = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refresh_token}}
+
+############################################################
+### 1. АДМИНИСТРИРОВАНИЕ
+############################################################
+
+### Проверка здоровья сервера
+GET {{baseUrl}}/api/healthz
+
+### Получение метрик
+GET {{baseUrl}}/admin/metrics
+
+### Сброс базы и метрик
+POST {{baseUrl}}/admin/reset
+
+############################################################
+### 2. ПОЛЬЗОВАТЕЛИ И АУТЕНТИФИКАЦИЯ
+############################################################
+
+### Создание пользователя
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+
+{
+  "email": "lane@example.com",
+  "password": "my-secure-password123"
+}
+
+### Логин (Выполни этот запрос, чтобы обновить токены ниже)
+# @name login
+POST {{baseUrl}}/api/login
+Content-Type: application/json
+
+{
+  "email": "lane@example.com",
+  "password": "my-secure-password123"
+}
+
+### Обновление данных пользователя
+PUT {{baseUrl}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "new-lane@example.com",
+  "password": "new-secure-password123"
+}
+
+############################################################
+### 3. REFRESH & REVOKE
+############################################################
+
+### Обновление Access токена
+POST {{baseUrl}}/api/refresh
+Authorization: Bearer {{refreshToken}}
+
+### Отзыв Refresh токена
+POST {{baseUrl}}/api/revoke
+Authorization: Bearer {{refreshToken}}
+
+############################################################
+### 4. ЧИРПЫ (CHIRPS)
+############################################################
+
+### Создать новый чирп
+# @name createChirp
+POST {{baseUrl}}/api/chirps
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "body": " I love Go."
+}
+
+### Получить все чирпы (Сначала старые - ASC)
+GET {{baseUrl}}/api/chirps?sort=asc
+
+### Получить все чирпы (Сначала новые - DESC)
+GET {{baseUrl}}/api/chirps?sort=desc
+
+### Получить все чирпы
+GET {{baseUrl}}/api/chirps
+
+### Получить чирпы конкретного автора
+GET {{baseUrl}}/api/chirps?author_id={{login.response.body.id}}
+
+### Удалить чирп (АВТОМАТИЧЕСКИ удаляет последний созданный чирп)
+DELETE {{baseUrl}}/api/chirps/{{createChirp.response.body.id}}
+Authorization: Bearer {{token}}
+
+
+############################################################
+### 5. Polka Webhook (Имитация оплаты)
+############################################################
+
+### Улучшить пользователя до Chirpy Red
+POST {{baseUrl}}/api/polka/webhooks
+Content-Type: application/json
+Authorization: ApiKey f271c81ff7084ee5b99a5091b42d486e
+
+{
+  "event": "user.upgraded",
+  "data": {
+    "user_id": "{{login.response.body.id}}"
+  }
+}
